@@ -1,10 +1,378 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Sales Report - Mini Store POS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-chart-line me-2"></i>Sales Report</h2>
+    <div>
+        <a href="{% url 'export_sales_csv' %}?{{ request.GET.urlencode }}" class="btn btn-success">
+            Export to CSV
+        </a>
+
+        <a href="{% url 'export_sales_pdf' %}?{{ request.GET.urlencode }}" class="btn btn-danger">
+            Export to PDF
+        </a>
+    </div>
+</div>
+
+<!-- Filter Form -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            {{ form|crispy }}
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-2"></i>Filter
+                </button>
+            </div>
+            <div class="col-md-2">
+                <a href="{% url 'sales_report' %}" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-times me-2"></i>Clear
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>₹{{ total_sales.total_amount|default:0|floatformat:2 }}</h4>
+                        <p class="mb-0">Total Sales</p>
+                    </div>
+                    <i class="fas fa-money-bill-wave fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ total_sales.total_count|default:0 }}</h4>
+                        <p class="mb-0">Total Transactions</p>
+                    </div>
+                    <i class="fas fa-receipt fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>₹{{ average_sale|default:0|floatformat:2 }}</h4>
+                        <p class="mb-0">Average Sale</p>
+                    </div>
+                    <i class="fas fa-chart-bar fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ total_items|default:0 }}</h4>
+                        <p class="mb-0">Items Sold</p>
+                    </div>
+                    <i class="fas fa-box fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sales Chart (Optional) -->
+{% if chart_data %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-chart-area me-2"></i>Sales Trend</h5>
+    </div>
+    <div class="card-body">
+        <canvas id="salesChart" height="100"></canvas>
+    </div>
+</div>
+{% endif %}
+
+<!-- Sales Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-table me-2"></i>Sales Details</h5>
+        <span class="badge bg-secondary">{{ page_obj.paginator.count }} total records</span>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Invoice</th>
+                        <th>Date</th>
+                        <th>Cashier</th>
+                        <th>Customer</th>
+                        <th>Payment</th>
+                        <th>Items</th>
+                        <th>Amount</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sale in page_obj %}
+                    <tr>
+                        <td><strong class="text-primary">{{ sale.invoice_number }}</strong></td>
+                        <td>
+                            <small class="text-muted">{{ sale.created_at|date:"d/m/Y" }}</small><br>
+                            <small class="text-muted">{{ sale.created_at|date:"H:i" }}</small>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center me-2">
+                                    <small class="text-white">{{ sale.cashier.first_name|first }}{{ sale.cashier.last_name|first }}</small>
+                                </div>
+                                <div>
+                                    <small>{{ sale.cashier.first_name }} {{ sale.cashier.last_name }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if sale.customer_name %}
+                                <i class="fas fa-user text-muted me-1"></i>{{ sale.customer_name }}
+                            {% else %}
+                                <span class="text-muted">Walk-in Customer</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if sale.payment_method == 'cash' %}
+                                <span class="badge bg-success"><i class="fas fa-money-bill-wave me-1"></i>Cash</span>
+                            {% elif sale.payment_method == 'card' %}
+                                <span class="badge bg-primary"><i class="fas fa-credit-card me-1"></i>Card</span>
+                            {% elif sale.payment_method == 'upi' %}
+                                <span class="badge bg-info"><i class="fas fa-mobile-alt me-1"></i>UPI</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ sale.get_payment_method_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark">{{ sale.sale_items.count }} items</span>
+                        </td>
+                        <td>
+                            <strong class="text-success">₹{{ sale.final_amount|floatformat:2 }}</strong>
+                            {% if sale.discount_amount and sale.discount_amount > 0 %}
+                                <br><small class="text-muted">Discount: ₹{{ sale.discount_amount|floatformat:2 }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'sale_receipt' sale.id %}" class="btn btn-sm btn-outline-primary" target="_blank" title="View Receipt">
+                                    <i class="fas fa-receipt"></i>
+                                </a>
+                                <a href="{% url 'sale_detail' sale.id %}" class="btn btn-info btn-sm">View Details
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if perms.sales.change_sale %}
+                                <a href="{% url 'sale_edit' sale.id %}" class="btn btn-sm btn-outline-warning" title="Edit Sale">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="fas fa-chart-line fa-3x mb-3"></i>
+                                <h5>No sales found</h5>
+                                <p>Try adjusting your filter criteria or check back later.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Sales pagination" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </a>
+                </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+
+            <!-- Page info -->
+            <div class="text-center mt-2">
+                <small class="text-muted">
+                    Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} entries
+                </small>
+            </div>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Print/Export Modal -->
+<div class="modal fade" id="exportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Export Sales Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Choose export format:</p>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'export_sales_csv' %}?{% for key, value in request.GET.items %}{{ key }}={{ value }}&{% endfor %}" class="btn btn-success">
+                        <i class="fas fa-file-csv me-2"></i>Export as CSV
+                    </a>
+                    <a href="{% url 'export_sales_pdf' %}?{% for key, value in request.GET.items %}{{ key }}={{ value }}&{% endfor %}" class="btn btn-danger">
+                        <i class="fas fa-file-pdf me-2"></i>Export as PDF
+                    </a>
+                    <button type="button" class="btn btn-primary" onclick="window.print()">
+                        <i class="fas fa-print me-2"></i>Print Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+{% if chart_data %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Sales Chart
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    const salesChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ chart_data.labels|safe }},
+            datasets: [{
+                label: 'Sales Amount',
+                data: {{ chart_data.data|safe }},
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                tension: 0.1,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Daily Sales Trend'
+                },
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endif %}
+
+<script>
+    // Auto-refresh functionality (optional)
+    function autoRefresh() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (!urlParams.has('date_from') && !urlParams.has('date_to')) {
+            // Only auto-refresh if no specific date filters are applied
+            setTimeout(() => {
+                location.reload();
+            }, 300000); // Refresh every 5 minutes
+        }
+    }
+    autoRefresh();
+
+    // Print specific styling
+    window.addEventListener('beforeprint', function() {
+        document.body.classList.add('printing');
+    });
+
+    window.addEventListener('afterprint', function() {
+        document.body.classList.remove('printing');
+    });
+</script>
+
+<style>
+    .avatar-sm {
+        width: 32px;
+        height: 32px;
+        font-size: 0.75rem;
+    }
+
+    @media print {
+        .btn, .pagination, .card-header {
+            display: none !important;
+        }
+
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        .table {
+            font-size: 0.8rem;
+        }
+
+        .printing .d-print-none {
+            display: none !important;
+        }
+    }
+
+    .table tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.05);
+    }
+
+    .badge {
+        font-size: 0.75em;
+    }
+</style>
+{% endblock %}

@@ -1,10 +1,32 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Register - Mini Store POS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow">
+            <div class="card-body p-5">
+                <div class="text-center mb-4">
+                    <i class="fas fa-user-plus fa-3x text-primary mb-3"></i>
+                    <h3>Create Account</h3>
+                    <p class="text-muted">Join Mini Store POS</p>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <button type="submit" class="btn btn-primary w-100 mb-3">
+                        <i class="fas fa-user-plus me-2"></i>Create Account
+                    </button>
+                </form>
+                
+                <div class="text-center">
+                    <a href="{% url 'login' %}" class="text-decoration-none">Already have an account? Sign in here</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

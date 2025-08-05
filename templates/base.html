@@ -1,10 +1,137 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Mini Store POS{% endblock %}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 0.75rem 1rem;
+            margin: 0.2rem 0;
+            border-radius: 0.5rem;
+            transition: all 0.3s;
+        }
+        .sidebar .nav-link:hover {
+            color: white;
+            background: rgba(255,255,255,0.1);
+        }
+        .sidebar .nav-link.active {
+            color: white;
+            background: rgba(255,255,255,0.2);
+        }
+        .product-card {
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid #e0e0e0;
+        }
+        .product-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .product-image {
+            height: 120px;
+            object-fit: cover;
+            border-radius: 0.375rem;
+        }
+        .cart-item {
+            border-bottom: 1px solid #eee;
+            padding: 0.5rem 0;
+        }
+        .low-stock {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+        }
+        .out-of-stock {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            opacity: 0.6;
+        }
+    </style>
 </head>
-<body>
-$END$
+<body class="bg-light">
+    <div class="container-fluid">
+        <div class="row">
+            {% if user.is_authenticated %}
+            <div class="col-md-3 col-lg-2 px-0">
+                <div class="sidebar d-flex flex-column p-3">
+                    <h4 class="text-white mb-4">
+                        <i class="fas fa-store me-2"></i>Mini Store POS
+                    </h4>
+
+                    <div class="user-info text-white mb-4">
+                        <i class="fas fa-user-circle fa-2x"></i>
+                        <div class="ms-2">
+                            <div class="fw-bold">{{ user.first_name }} {{ user.last_name }}</div>
+                            <small class="text-white-50">{{ user.userprofile.role|title }}</small>
+                        </div>
+                    </div>
+
+                    <nav class="nav nav-pills flex-column">
+                        <a class="nav-link" href="{% url 'dashboard' %}">
+                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                        </a>
+
+                        {% if user.userprofile.role == 'admin' %}
+                        <a class="nav-link" href="{% url 'product_list' %}">
+                            <i class="fas fa-box me-2"></i>Products
+                        </a>
+                        <a class="nav-link" href="{% url 'category_list' %}">
+                            <i class="fas fa-tags me-2"></i>Categories
+                        </a>
+                        <a class="nav-link" href="{% url 'sales_report' %}">
+                            <i class="fas fa-chart-line me-2"></i>Sales Report
+                        </a>
+                        <a class="nav-link" href="{% url 'stock_management' %}">
+                            <i class="fas fa-warehouse me-2"></i>Stock Management
+                        </a>
+                        <a class="nav-link" href="{% url 'user_management' %}">
+                            <i class="fas fa-users me-2"></i>User Management
+                        </a>
+                        {% endif %}
+
+                        {% if user.userprofile.role == 'cashier' %}
+                        <a class="nav-link" href="{% url 'my_sales' %}">
+                            <i class="fas fa-receipt me-2"></i>My Sales
+                        </a>
+                        {% endif %}
+                    </nav>
+
+                    <div class="mt-auto">
+                        <a class="nav-link text-danger" href="{% url 'logout' %}">
+                            <i class="fas fa-sign-out-alt me-2"></i>Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="{% if user.is_authenticated %}col-md-9 col-lg-10{% else %}col-12{% endif %}">
+                <main class="p-4">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    {% block content %}
+                    {% endblock %}
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}
+    {% endblock %}
 </body>
 </html>

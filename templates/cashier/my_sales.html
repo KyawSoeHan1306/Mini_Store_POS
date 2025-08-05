@@ -1,10 +1,89 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends 'base.html' %}
+
+{% block title %}My Sales - Mini Store POS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-receipt me-2"></i>My Sales</h2>
+    <a href="{% url 'dashboard' %}" class="btn btn-primary">
+        <i class="fas fa-cash-register me-2"></i>Back to POS
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Invoice</th>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Items</th>
+                        <th>Payment</th>
+                        <th>Amount</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sale in page_obj %}
+                    <tr>
+                        <td><strong>{{ sale.invoice_number }}</strong></td>
+                        <td>{{ sale.created_at|date:"d/m/Y H:i" }}</td>
+                        <td>{{ sale.customer_name|default:"-" }}</td>
+                        <td>{{ sale.items.count }} item{{ sale.items.count|pluralize }}</td>
+                        <td>
+                            <span class="badge bg-info">{{ sale.get_payment_method_display }}</span>
+                        </td>
+                        <td>₹{{ sale.final_amount }}</td>
+                        <td>
+                            <a href="{% url 'sale_receipt' sale.id %}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                <i class="fas fa-receipt"></i> Receipt
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <i class="fas fa-receipt fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">No sales found.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Sales pagination">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% else %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

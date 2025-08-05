@@ -1,10 +1,126 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard - Mini Store POS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard</h2>
+    <span class="text-muted">Welcome back, {{ user.first_name }}!</span>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ total_products }}</h4>
+                        <p class="mb-0">Total Products</p>
+                    </div>
+                    <i class="fas fa-box fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ low_stock_products }}</h4>
+                        <p class="mb-0">Low Stock Items</p>
+                    </div>
+                    <i class="fas fa-exclamation-triangle fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>₹{{ total_sales_today }}</h4>
+                        <p class="mb-0">Today's Sales</p>
+                    </div>
+                    <i class="fas fa-chart-line fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>₹{{ total_sales_week }}</h4>
+                        <p class="mb-0">This Week</p>
+                    </div>
+                    <i class="fas fa-calendar-week fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-receipt me-2"></i>Recent Sales</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_sales %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Invoice</th>
+                                    <th>Cashier</th>
+                                    <th>Amount</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sale in recent_sales %}
+                                <tr>
+                                    <td>{{ sale.invoice_number }}</td>
+                                    <td>{{ sale.cashier.first_name }}</td>
+                                    <td>₹{{ sale.final_amount }}</td>
+                                    <td>{{ sale.created_at|date:"H:i" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No recent sales found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-exclamation-triangle me-2"></i>Low Stock Alert</h5>
+            </div>
+            <div class="card-body">
+                {% if low_stock_items %}
+                    {% for product in low_stock_items %}
+                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                        <div>
+                            <strong>{{ product.name }}</strong>
+                            <small class="text-muted d-block">{{ product.category.name }}</small>
+                        </div>
+                        <span class="badge bg-warning">{{ product.stock_quantity }} left</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">All products are well stocked!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

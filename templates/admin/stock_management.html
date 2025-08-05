@@ -1,10 +1,105 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Stock Management - Mini Store POS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-warehouse me-2"></i>Stock Management</h2>
+</div>
+
+<div class="row">
+    <!-- Stock Adjustment Form -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-edit me-2"></i>Stock Adjustment</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-save me-2"></i>Update Stock
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Low Stock Alert -->
+        <div class="card mt-4">
+            <div class="card-header bg-warning text-dark">
+                <h6><i class="fas fa-exclamation-triangle me-2"></i>Low Stock Alert</h6>
+            </div>
+            <div class="card-body">
+                {% if low_stock_products %}
+                    {% for product in low_stock_products %}
+                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                        <div>
+                            <strong>{{ product.name }}</strong>
+                            <small class="text-muted d-block">{{ product.category.name }}</small>
+                        </div>
+                        <span class="badge bg-warning text-dark">{{ product.stock_quantity }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted mb-0">No low stock items!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Stock Movements -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-history me-2"></i>Recent Stock Movements</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Type</th>
+                                <th>Quantity</th>
+                                <th>Notes</th>
+                                <th>User</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for movement in movements %}
+                            <tr>
+                                <td>{{ movement.product.name }}</td>
+                                <td>
+                                    {% if movement.movement_type == 'in' %}
+                                    <span class="badge bg-success">Stock In</span>
+                                    {% elif movement.movement_type == 'out' %}
+                                    <span class="badge bg-danger">Stock Out</span>
+                                    {% else %}
+                                    <span class="badge bg-info">Adjustment</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if movement.movement_type == 'out' %}-{% endif %}{{ movement.quantity }}
+                                </td>
+                                <td>{{ movement.notes|truncatechars:30 }}</td>
+                                <td>{{ movement.created_by.first_name }}</td>
+                                <td>{{ movement.created_at|date:"d/m H:i" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-3">
+                                    <p class="text-muted mb-0">No stock movements found.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
