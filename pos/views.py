@@ -1,5 +1,6 @@
+from django.contrib.auth.forms import PasswordChangeForm
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login
+from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
@@ -11,6 +12,9 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from django.http import HttpResponse
 import csv
+
+from django.utils.dateparse import parse_date
+from django.views.decorators.http import require_POST
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
@@ -493,11 +497,37 @@ def my_sales_view(request):
         return redirect('dashboard')
 
     sales = Sale.objects.filter(cashier=request.user).order_by('-created_at')
-    paginator = Paginator(sales, 20)
+
+    # --- Search ---
+    search_query = request.GET.get('search', '')
+    if search_query:
+        sales = sales.filter(
+            Q(invoice_number__icontains=search_query) |
+            Q(customer_name__icontains=search_query) |
+            Q(customer_phone__icontains=search_query)
+        )
+
+    # --- Date Filtering ---
+    from_date = request.GET.get('from_date')
+    to_date = request.GET.get('to_date')
+
+    if from_date:
+        sales = sales.filter(created_at__date__gte=parse_date(from_date))
+    if to_date:
+        sales = sales.filter(created_at__date__lte=parse_date(to_date))
+
+    # --- Pagination ---
+    paginator = Paginator(sales, 10)  # 10 per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    return render(request, 'cashier/my_sales.html', {'page_obj': page_obj})
+    return render(request, 'cashier/my_sales.html', {
+        'page_obj': page_obj,
+        'search_query': search_query,
+        'from_date': from_date,
+        'to_date': to_date,
+    })
+
 
 
 @login_required
@@ -646,3 +676,216 @@ def export_sales_pdf(request):
     response.write(pdf)
 
     return response
+
+
+@login_required
+def pos_view(request):
+    products = Product.objects.all().prefetch_related('category')
+    categories = Category.objects.all()
+    context = {
+        'products': products,
+        'categories': categories,
+    }
+    return render(request, 'cashier/pos.html', context)
+
+
+@login_required
+@require_POST
+def complete_sale(request):
+    try:
+        data = json.loads(request.body)
+        items = data['items']
+        payment_method = data['payment_method']
+        payment_amount = data['payment_amount']
+        total_amount = data['total']
+
+        # Create sale
+        sale = Sale.objects.create(
+            cashier=request.user,
+            total_amount=total_amount,
+            payment_method=payment_method,
+            payment_amount=payment_amount
+        )
+
+        # Create sale items and update stock
+        for item in items:
+            product = Product.objects.get(id=item['productId'])
+            quantity = item['quantity']
+
+            # Check stock
+            if product.stock_quantity < quantity:
+                raise ValueError(f"Insufficient stock for {product.name}")
+
+            # Create sale item
+            SaleItem.objects.create(
+                sale=sale,
+                product=product,
+                quantity=quantity,
+                price=item['price']
+            )
+
+            # Update stock
+            product.stock_quantity -= quantity
+            product.save()
+
+        return JsonResponse({
+            'success': True,
+            'sale_id': sale.id
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+
+@login_required
+def profile(request):
+    if request.method == "POST":
+        user = request.user
+        user.first_name = request.POST.get("first_name")
+        user.last_name = request.POST.get("last_name")
+        user.email = request.POST.get("email")
+        user.save()
+        messages.success(request, "Profile updated successfully!")
+        return redirect("profile")
+
+    return render(request, "profile.html")
+
+
+@login_required
+def change_password(request):
+    if request.method == "POST":
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)  # keep logged in
+            messages.success(request, "Password updated successfully!")
+            return redirect("profile")
+        else:
+            messages.error(request, "Please correct the error below.")
+    else:
+        form = PasswordChangeForm(request.user)
+    return render(request, "change_password.html", {"form": form})
+
+
+
+import json
+import uuid
+from django.http import JsonResponse
+from django.utils.timezone import now
+from django.contrib.auth.decorators import login_required
+from .models import Sale, SaleItem, Product
+
+@login_required
+def process_sale(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            cart = data.get("cart", [])
+            payment_method = data.get("payment_method", "cash")
+            customer_name = data.get("customer_name", "")
+            customer_phone = data.get("customer_phone", "")
+            notes = data.get("notes", "")
+
+            if not cart:
+                return JsonResponse({"success": False, "message": "Cart is empty"})
+
+            # Compute amounts
+            subtotal = sum(item["price"] * item["qty"] for item in cart)
+            discount = 0  # apply rules if needed
+            tax = subtotal * 0.1  # example: 10% tax
+            final_total = subtotal - discount + tax
+
+            # Create sale
+            sale = Sale.objects.create(
+                cashier=request.user,
+                total_amount=subtotal,
+                discount_amount=discount,
+                tax_amount=tax,
+                final_amount=final_total,
+                payment_method=payment_method,
+                customer_name=customer_name,
+                customer_phone=customer_phone,
+                notes=notes,
+            )
+
+            # Save SaleItems
+            for item in cart:
+                product = Product.objects.get(pk=item["id"])
+                SaleItem.objects.create(
+                    sale=sale,
+                    product=product,
+                    quantity=item["qty"],
+                    unit_price=item["price"],
+                )
+                # reduce stock
+                product.stock_quantity -= item["qty"]
+                product.save()
+
+            return JsonResponse({"success": True, "sale_id": sale.id})
+
+        except Exception as e:
+            return JsonResponse({"success": False, "message": str(e)})
+
+    return JsonResponse({"success": False, "message": "Invalid request"})
+
+
+
+@login_required
+def sale_receipt_view(request, sale_id):
+    sale = get_object_or_404(Sale, id=sale_id)
+    items = sale.items.all()
+
+    # Compute totals
+    subtotal = sum(item.unit_price * item.quantity for item in items)
+    discount = sale.discount_amount
+    tax = sale.tax_amount
+    final = sale.final_amount
+
+    return render(request, "receipt.html", {
+        "sale": sale,
+        "items": items,
+        "subtotal": subtotal,
+        "discount": discount,
+        "tax": tax,
+        "final": final,
+    })
+
+
+from django.shortcuts import render
+from django.core.paginator import Paginator
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+from .models import Sale
+
+@login_required
+def my_sales(request):
+    sales = Sale.objects.filter(cashier=request.user).order_by("-created_at")
+
+    # --- Search filter ---
+    search_query = request.GET.get("search")
+    if search_query:
+        sales = sales.filter(
+            Q(invoice_number__icontains=search_query) |
+            Q(customer_name__icontains=search_query) |
+            Q(customer_phone__icontains=search_query)
+        )
+
+    # --- Date filters ---
+    from_date = request.GET.get("from_date")
+    to_date = request.GET.get("to_date")
+
+    if from_date:
+        sales = sales.filter(created_at__date__gte=from_date)
+    if to_date:
+        sales = sales.filter(created_at__date__lte=to_date)
+
+    # --- Pagination ---
+    paginator = Paginator(sales, 10)  # 10 sales per page
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, "cashier/my_sales.html", {
+        "page_obj": page_obj,
+    })

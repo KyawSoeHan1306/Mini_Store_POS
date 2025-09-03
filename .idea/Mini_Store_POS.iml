@@ -16,6 +16,7 @@
     <content url="file://$MODULE_DIR$" />
     <orderEntry type="jdk" jdkName="Mini_Store_POS" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="font-awesome" level="application" />
   </component>
   <component name="PackageRequirementsSettings">
     <option name="modifyBaseFiles" value="true" />

@@ -1,27 +1,120 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}My Sales - Mini Store POS{% endblock %}
+{% block title %}My Sales History{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/my_sales.css' %}">
+<style>
+    /* Better table responsiveness */
+    .table-responsive {
+        border-radius: 8px;
+        overflow-x: auto;
+        background: white;
+    }
+    .sales-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .sales-filter {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        justify-content: space-between;
+        align-items: center;
+        margin: 20px 0;
+    }
+    .search-container input {
+        border-radius: 20px;
+        padding: 6px 12px;
+        border: 1px solid #ccc;
+        width: 220px;
+    }
+    .search-container button {
+        background: #007bff;
+        border: none;
+        color: white;
+        border-radius: 20px;
+        padding: 6px 12px;
+        cursor: pointer;
+    }
+    .payment-badge {
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    .payment-cash { background: #28a745; color: white; }
+    .payment-card { background: #007bff; color: white; }
+    .payment-digital { background: #ffc107; color: black; }
+    .actions .btn-action {
+        padding: 4px 10px;
+        font-size: 0.85rem;
+        border-radius: 6px;
+        background: #f8f9fa;
+        border: 1px solid #ddd;
+        text-decoration: none;
+        color: #333;
+        transition: 0.2s;
+    }
+    .actions .btn-action:hover {
+        background: #007bff;
+        color: white;
+    }
+    .no-sales {
+        text-align: center;
+        padding: 40px;
+        color: #777;
+    }
+    .no-sales .empty-icon {
+        font-size: 3rem;
+        color: #ccc;
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-receipt me-2"></i>My Sales</h2>
-    <a href="{% url 'dashboard' %}" class="btn btn-primary">
-        <i class="fas fa-cash-register me-2"></i>Back to POS
-    </a>
-</div>
+<div class="container my-4">
+    <!-- Header -->
+    <div class="sales-header">
+        <h2 class="fw-bold">🧾 My Sales History</h2>
+        <a href="{% url 'dashboard' %}" class="btn btn-primary">
+            <i class="fas fa-cash-register"></i> Back to POS
+        </a>
+    </div>
 
-<div class="card">
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
+    <!-- Filters -->
+    <div class="sales-filter">
+        <div class="search-container d-flex align-items-center">
+            <input type="text" id="sales-search" placeholder="Search by invoice or customer...">
+            <button id="search-button"><i class="fas fa-search"></i></button>
+        </div>
+        <div class="date-filter d-flex align-items-center gap-2">
+            <label for="date-from" class="mb-0">From:</label>
+            <input type="date" id="date-from" class="form-control form-control-sm">
+            <label for="date-to" class="mb-0">To:</label>
+            <input type="date" id="date-to" class="form-control form-control-sm">
+            <button id="filter-button" class="btn btn-sm btn-primary">Filter</button>
+        </div>
+    </div>
+
+    <!-- Sales Table -->
+    <div class="sales-table-container mt-3">
+        {% if page_obj %}
+        <div class="table-responsive shadow-sm">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
                     <tr>
-                        <th>Invoice</th>
+                        <th>Invoice #</th>
                         <th>Date</th>
                         <th>Customer</th>
                         <th>Items</th>
                         <th>Payment</th>
-                        <th>Amount</th>
+                        <th>Total</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -29,61 +122,53 @@
                     {% for sale in page_obj %}
                     <tr>
                         <td><strong>{{ sale.invoice_number }}</strong></td>
-                        <td>{{ sale.created_at|date:"d/m/Y H:i" }}</td>
-                        <td>{{ sale.customer_name|default:"-" }}</td>
-                        <td>{{ sale.items.count }} item{{ sale.items.count|pluralize }}</td>
+                        <td>{{ sale.created_at|date:"M d, Y H:i" }}</td>
+                        <td>{{ sale.customer_name|default:"Walk-in Customer" }}</td>
+                        <td>{{ sale.saleitem_set.count }}</td>
                         <td>
-                            <span class="badge bg-info">{{ sale.get_payment_method_display }}</span>
+                            <span class="payment-badge payment-{{ sale.payment_method }}">
+                                {{ sale.get_payment_method_display }}
+                            </span>
                         </td>
-                        <td>₹{{ sale.final_amount }}</td>
-                        <td>
-                            <a href="{% url 'sale_receipt' sale.id %}" class="btn btn-sm btn-outline-primary" target="_blank">
+                        <td><strong>${{ sale.final_amount }}</strong></td>
+                        <td class="actions">
+                            <a href="{% url 'sale_receipt' sale.id %}" class="btn-action" target="_blank">
                                 <i class="fas fa-receipt"></i> Receipt
                             </a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="7" class="text-center py-4">
-                            <i class="fas fa-receipt fa-2x text-muted mb-2"></i>
-                            <p class="text-muted">No sales found.</p>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        
+
         <!-- Pagination -->
-        {% if page_obj.has_other_pages %}
-        <nav aria-label="Sales pagination">
-            <ul class="pagination justify-content-center">
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <span class="text-muted">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+            <div>
                 {% if page_obj.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
-                </li>
+                <a href="?page=1" class="btn btn-sm btn-outline-secondary">&laquo; First</a>
+                <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-sm btn-outline-secondary">Previous</a>
                 {% endif %}
-                
-                {% for num in page_obj.paginator.page_range %}
-                {% if page_obj.number == num %}
-                <li class="page-item active">
-                    <span class="page-link">{{ num }}</span>
-                </li>
-                {% else %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-                </li>
-                {% endif %}
-                {% endfor %}
-                
+
                 {% if page_obj.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
-                </li>
+                <a href="?page={{ page_obj.next_page_number }}" class="btn btn-sm btn-outline-secondary">Next</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}" class="btn btn-sm btn-outline-secondary">Last &raquo;</a>
                 {% endif %}
-            </ul>
-        </nav>
+            </div>
+        </div>
+        {% else %}
+        <div class="no-sales">
+            <i class="fas fa-receipt empty-icon"></i>
+            <p>No sales records found.</p>
+        </div>
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/my_sales.js' %}"></script>
 {% endblock %}

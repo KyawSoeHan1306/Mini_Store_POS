@@ -1,126 +1,270 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
-{% block title %}Admin Dashboard - Mini Store POS{% endblock %}
+{% block title %}POS{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard</h2>
-    <span class="text-muted">Welcome back, {{ user.first_name }}!</span>
-</div>
-
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card text-white bg-primary">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ total_products }}</h4>
-                        <p class="mb-0">Total Products</p>
-                    </div>
-                    <i class="fas fa-box fa-2x opacity-75"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-warning">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ low_stock_products }}</h4>
-                        <p class="mb-0">Low Stock Items</p>
-                    </div>
-                    <i class="fas fa-exclamation-triangle fa-2x opacity-75"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-success">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>₹{{ total_sales_today }}</h4>
-                        <p class="mb-0">Today's Sales</p>
-                    </div>
-                    <i class="fas fa-chart-line fa-2x opacity-75"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-info">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>₹{{ total_sales_week }}</h4>
-                        <p class="mb-0">This Week</p>
-                    </div>
-                    <i class="fas fa-calendar-week fa-2x opacity-75"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="row">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-receipt me-2"></i>Recent Sales</h5>
-            </div>
-            <div class="card-body">
-                {% if recent_sales %}
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Invoice</th>
-                                    <th>Cashier</th>
-                                    <th>Amount</th>
-                                    <th>Time</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for sale in recent_sales %}
-                                <tr>
-                                    <td>{{ sale.invoice_number }}</td>
-                                    <td>{{ sale.cashier.first_name }}</td>
-                                    <td>₹{{ sale.final_amount }}</td>
-                                    <td>{{ sale.created_at|date:"H:i" }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <p class="text-muted">No recent sales found.</p>
-                {% endif %}
+    <!-- Main POS Area -->
+    <div class="col-lg-8 col-md-7">
+        <!-- Search + Categories -->
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <input type="text" id="searchInput" class="form-control w-50" placeholder="Search product...">
+
+            <div class="btn-group" role="group">
+                <button class="btn btn-outline-primary active" data-category="all">All</button>
+                {% for category in categories %}
+                <button class="btn btn-outline-primary" data-category="{{ category.id }}">{{ category.name }}</button>
+                {% endfor %}
             </div>
         </div>
-    </div>
-    
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-exclamation-triangle me-2"></i>Low Stock Alert</h5>
-            </div>
-            <div class="card-body">
-                {% if low_stock_items %}
-                    {% for product in low_stock_items %}
-                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
-                        <div>
-                            <strong>{{ product.name }}</strong>
-                            <small class="text-muted d-block">{{ product.category.name }}</small>
-                        </div>
-                        <span class="badge bg-warning">{{ product.stock_quantity }} left</span>
+
+        <!-- Products Grid -->
+        <div class="row g-3" id="productGrid">
+            {% for product in products %}
+            <div class="col-sm-6 col-md-4 col-lg-3">
+                <div class="card h-100 product-card" data-category="{{ product.category.id }}">
+                    <div class="card-body d-flex flex-column">
+                        <h6 class="card-title text-truncate">{{ product.name }}</h6>
+                        <p class="text-muted mb-2">${{ product.price }}</p>
+                        <button class="btn btn-sm btn-primary mt-auto add-to-cart"
+                                data-id="{{ product.id }}"
+                                data-name="{{ product.name }}"
+                                data-price="{{ product.price }}">
+                            <i class="fas fa-plus"></i> Add
+                        </button>
                     </div>
-                    {% endfor %}
-                {% else %}
-                    <p class="text-muted">All products are well stocked!</p>
-                {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Cart / Invoice Section -->
+    <div class="col-lg-4 col-md-5">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-shopping-cart me-2"></i> Cart
+            </div>
+            <div class="card-body p-3" id="cartItems">
+                <p class="text-muted text-center">Your cart is empty</p>
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal</span><span id="subtotal">$0.00</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Tax</span><span id="tax">$0.00</span>
+                </div>
+                <div class="d-flex justify-content-between fw-bold border-top pt-2">
+                    <span>Total</span><span id="total">$0.00</span>
+                </div>
+                <!-- Checkout Modal -->
+                <div class="modal fade" id="checkoutModal" tabindex="-1">
+                  <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title">Complete Payment</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                      </div>
+                      <div class="modal-body">
+                        <form id="checkoutForm">
+                          <div class="mb-3">
+                            <label class="form-label">Customer Name</label>
+                            <input type="text" id="customerName" class="form-control">
+                          </div>
+                          <div class="mb-3">
+                            <label class="form-label">Customer Phone</label>
+                            <input type="text" id="customerPhone" class="form-control">
+                          </div>
+                          <div class="mb-3">
+                            <label class="form-label">Payment Method</label>
+                            <select id="paymentMethod" class="form-select" required>
+                              <option value="">-- Select Payment --</option>
+                              <option value="cash">Cash</option>
+                              <option value="card">Card</option>
+                              <option value="digital">Digital Payment</option>
+                            </select>
+                          </div>
+                          <div class="mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea id="notes" class="form-control"></textarea>
+                          </div>
+                          <p><strong>Total:</strong> <span id="checkoutTotal"></span></p>
+                        </form>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="confirmCheckoutBtn">Confirm Payment</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <button class="btn btn-success w-100 mt-3" id="checkoutBtn">
+                    <i class="fas fa-cash-register me-2"></i> Checkout
+                </button>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+// ------------------ CART STATE ------------------
+let cart = [];
+const TAX_RATE = 0.1;  // 10% tax
+
+// ------------------ DOM REFERENCES ------------------
+const cartItems = document.getElementById("cartItems");
+const subtotalEl = document.getElementById("subtotal");
+const taxEl = document.getElementById("tax");
+const totalEl = document.getElementById("total");
+
+// ------------------ ADD TO CART ------------------
+document.querySelectorAll(".add-to-cart").forEach(btn => {
+    btn.addEventListener("click", () => {
+        const id = btn.dataset.id;
+        const name = btn.dataset.name;
+        const price = parseFloat(btn.dataset.price);
+
+        // Check if already in cart
+        const existing = cart.find(item => item.id === id);
+        if (existing) {
+            existing.qty += 1;
+        } else {
+            cart.push({ id, name, price, qty: 1 });
+        }
+        renderCart();
+    });
+});
+
+// ------------------ RENDER CART ------------------
+function renderCart() {
+    cartItems.innerHTML = "";
+    if (cart.length === 0) {
+        cartItems.innerHTML = `<p class="text-muted text-center">Your cart is empty</p>`;
+        updateTotals();
+        return;
+    }
+
+    cart.forEach(item => {
+        const div = document.createElement("div");
+        div.classList.add("d-flex", "justify-content-between", "align-items-center", "mb-2");
+
+        div.innerHTML = `
+            <div>
+                <strong>${item.name}</strong><br>
+                <small>$${item.price.toFixed(2)} x ${item.qty}</small>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-secondary me-1" onclick="changeQty('${item.id}', -1)">-</button>
+                <button class="btn btn-sm btn-outline-secondary me-1" onclick="changeQty('${item.id}', 1)">+</button>
+                <button class="btn btn-sm btn-danger" onclick="removeItem('${item.id}')"><i class="fas fa-trash"></i></button>
+            </div>
+        `;
+        cartItems.appendChild(div);
+    });
+
+    updateTotals();
+}
+
+// ------------------ CART ACTIONS ------------------
+function changeQty(id, delta) {
+    const item = cart.find(i => i.id === id);
+    if (!item) return;
+    item.qty += delta;
+    if (item.qty <= 0) cart = cart.filter(i => i.id !== id);
+    renderCart();
+}
+
+function removeItem(id) {
+    cart = cart.filter(i => i.id !== id);
+    renderCart();
+}
+
+// ------------------ TOTALS ------------------
+function updateTotals() {
+    const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+    const tax = subtotal * TAX_RATE;
+    const total = subtotal + tax;
+
+    subtotalEl.textContent = `$${subtotal.toFixed(2)}`;
+    taxEl.textContent = `$${tax.toFixed(2)}`;
+    totalEl.textContent = `$${total.toFixed(2)}`;
+}
+
+// ------------------ CATEGORY FILTER ------------------
+document.querySelectorAll("[data-category]").forEach(btn => {
+    btn.addEventListener("click", () => {
+        const selected = btn.getAttribute("data-category");
+
+        // toggle button active state
+        document.querySelectorAll("[data-category]").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        document.querySelectorAll(".product-card").forEach(card => {
+            if (selected === "all" || card.dataset.category === selected) {
+                card.parentElement.style.display = "block";
+            } else {
+                card.parentElement.style.display = "none";
+            }
+        });
+    });
+});
+
+// ------------------ SEARCH FILTER ------------------
+document.getElementById("searchInput").addEventListener("keyup", e => {
+    const term = e.target.value.toLowerCase();
+    document.querySelectorAll(".product-card").forEach(card => {
+        const name = card.querySelector(".card-title").textContent.toLowerCase();
+        card.parentElement.style.display = name.includes(term) ? "block" : "none";
+    });
+});
+
+// ------------------ CHECKOUT ------------------
+// Open checkout modal
+document.getElementById("checkoutBtn").addEventListener("click", () => {
+    if (cart.length === 0) {
+        alert("Cart is empty!");
+        return;
+    }
+    document.getElementById("checkoutTotal").textContent = totalEl.textContent;
+    const checkoutModal = new bootstrap.Modal(document.getElementById("checkoutModal"));
+    checkoutModal.show();
+});
+
+// Confirm checkout
+document.getElementById("confirmCheckoutBtn").addEventListener("click", () => {
+    const paymentMethod = document.getElementById("paymentMethod").value;
+    if (!paymentMethod) {
+        alert("Please select a payment method.");
+        return;
+    }
+
+    fetch("{% url 'process_sale' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}",
+        },
+        body: JSON.stringify({
+            cart,
+            payment_method: paymentMethod
+        }),
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert("Sale Completed! Transaction ID: " + data.sale_id);
+            cart = [];
+            renderCart();
+            window.location.href = `/receipt/${data.sale_id}/`; // redirect to receipt
+        } else {
+            alert("Error: " + data.message);
+        }
+    })
+    .catch(err => console.error("Error:", err));
+});
+</script>
 {% endblock %}
