@@ -61,11 +61,25 @@ class StockAdjustmentForm(forms.ModelForm):
         }
 
 
+class SaleForm(forms.ModelForm):
+    class Meta:
+        model = Sale
+        fields = '__all__'
+        widgets = {
+            'customer_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'customer_phone': forms.TextInput(attrs={'class': 'form-control'}),
+            'payment_method': forms.Select(attrs={'class': 'form-select'}),
+            'discount_amount': forms.NumberInput(attrs={'class': 'form-control'}),
+            'tax_amount': forms.NumberInput(attrs={'class': 'form-control'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+
 class SaleFilterForm(forms.Form):
     start_date = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
     end_date = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
-    cashier = forms.ModelChoiceField(queryset=User.objects.filter(userprofile__role='cashier'), required=False)
-    payment_method = forms.ChoiceField(choices=[('', 'All')] + Sale.PAYMENT_CHOICES, required=False)
+    cashier = forms.ModelChoiceField(queryset=User.objects.filter(userprofile__role='cashier'),required=False,widget=forms.Select(attrs={'class': 'form-select'}))
+    payment_method = forms.ChoiceField(choices=[('', 'All')] + Sale.PAYMENT_CHOICES,required=False,widget=forms.Select(attrs={'class': 'form-select'}))
 
 
 class SaleEditForm(forms.ModelForm):
@@ -73,5 +87,14 @@ class SaleEditForm(forms.ModelForm):
         model = Sale
         fields = ['customer_name', 'customer_phone', 'payment_method',
                  'discount_amount', 'tax_amount', 'notes']
+        widgets = {
+            'customer_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'customer_phone': forms.TextInput(attrs={'class': 'form-control'}),
+            'payment_method': forms.Select(attrs={'class': 'form-select'}),
+            'discount_amount': forms.NumberInput(attrs={'class': 'form-control'}),
+            'tax_amount': forms.NumberInput(attrs={'class': 'form-control'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
 
 
