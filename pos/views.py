@@ -221,7 +221,7 @@ def sale_detail_view(request, sale_id):
         return redirect('dashboard')
 
     sale = get_object_or_404(Sale, id=sale_id)
-    sale_items = sale.saleitem_set.all()
+    sale_items = sale.items.all()
 
     context = {
         'sale': sale,
