@@ -864,6 +864,7 @@ def process_sale(request):
             return JsonResponse({
                 'success': True,
                 'invoice_number': sale.invoice_number,
+                'tax_amount': str(sale.tax_amount), 
                 'final_amount': str(sale.final_amount),
                 'sale_id': sale.id,
             })
