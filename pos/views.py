@@ -799,8 +799,9 @@ def process_sale(request):
             sale_items = []
 
             for item in items:
-                product = Product.objects.get(id=item['product_id'], is_active=True)
-                quantity = int(item['quantity'])
+                # use correct keys from JS
+                product = Product.objects.get(id=item['id'], is_active=True)
+                quantity = int(item['qty'])
 
                 if product.stock_quantity < quantity:
                     return JsonResponse({'error': f'Insufficient stock for {product.name}'}, status=400)
@@ -817,7 +818,7 @@ def process_sale(request):
                 })
 
             # Apply discount and calculate final amount
-            tax_amount = Decimal('0')  # You can implement tax calculation here
+            tax_amount = Decimal('0')
             final_amount = total_amount - discount_amount + tax_amount
 
             # Create sale
@@ -832,7 +833,6 @@ def process_sale(request):
                 customer_phone=customer_phone,
                 notes=data.get('notes', ''),
             )
-
 
             # Create sale items and update stock
             for item_data in sale_items:
@@ -871,6 +871,7 @@ def process_sale(request):
             return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+
 
 
 @login_required
