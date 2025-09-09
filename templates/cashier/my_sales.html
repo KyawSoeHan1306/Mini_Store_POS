@@ -6,74 +6,143 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/my_sales.css' %}">
 <style>
-    /* Better table responsiveness */
-    .table-responsive {
-        border-radius: 8px;
-        overflow-x: auto;
-        background: white;
+/* Container */
+.container {
+    max-width: 1200px;
+}
+
+/* Header */
+.sales-header h2 {
+    font-size: 1.6rem;
+}
+.sales-header .btn {
+    border-radius: 25px;
+    padding: 6px 16px;
+}
+
+/* Search & Filter */
+.sales-filter {
+    background: #f8f9fa;
+    padding: 10px 15px;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.search-container input {
+    border-radius: 25px;
+    padding-left: 35px;
+}
+.search-container {
+    position: relative;
+}
+.search-container i {
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    transform: translateY(-50%);
+    color: #888;
+}
+#filter-button {
+    border-radius: 20px;
+    padding: 5px 14px;
+}
+
+/* Table */
+.table {
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 0;
+}
+.table thead {
+    position: sticky;
+    top: 0;
+    background: #f1f3f5;
+    z-index: 2;
+}
+.table td, .table th {
+    vertical-align: middle;
+}
+.table td strong {
+    color: #333;
+}
+
+/* Payment badges */
+.payment-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+}
+.payment-cash { background: #28a745; color: #fff; }
+.payment-card { background: #007bff; color: #fff; }
+.payment-digital { background: #ffc107; color: #000; }
+
+/* Totals */
+.table td:nth-child(6) strong {
+    color: #0d6efd;
+    font-size: 1rem;
+}
+
+/* Actions */
+.btn-action {
+    padding: 4px 10px;
+    font-size: 0.85rem;
+    border-radius: 6px;
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    text-decoration: none;
+    color: #007bff;
+    transition: all 0.2s ease;
+}
+.btn-action:hover {
+    background: #007bff;
+    color: #fff;
+}
+
+/* Empty state */
+.no-sales {
+    text-align: center;
+    padding: 50px;
+}
+.no-sales .empty-icon {
+    font-size: 3rem;
+    color: #ccc;
+}
+
+/* Pagination */
+.pagination-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+}
+.pagination-controls a {
+    border-radius: 20px;
+    margin: 0 3px;
+}
+@media (max-width: 768px) {
+    .table thead {
+        display: none;
     }
-    .sales-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-    .sales-filter {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 15px;
-        justify-content: space-between;
-        align-items: center;
-        margin: 20px 0;
-    }
-    .search-container input {
-        border-radius: 20px;
-        padding: 6px 12px;
-        border: 1px solid #ccc;
-        width: 220px;
-    }
-    .search-container button {
-        background: #007bff;
-        border: none;
-        color: white;
-        border-radius: 20px;
-        padding: 6px 12px;
-        cursor: pointer;
-    }
-    .payment-badge {
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 0.8rem;
-        font-weight: 600;
-    }
-    .payment-cash { background: #28a745; color: white; }
-    .payment-card { background: #007bff; color: white; }
-    .payment-digital { background: #ffc107; color: black; }
-    .actions .btn-action {
-        padding: 4px 10px;
-        font-size: 0.85rem;
-        border-radius: 6px;
-        background: #f8f9fa;
+    .table tbody tr {
+        display: block;
+        margin-bottom: 12px;
         border: 1px solid #ddd;
-        text-decoration: none;
-        color: #333;
-        transition: 0.2s;
+        border-radius: 10px;
+        padding: 10px;
+        background: #fff;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
-    .actions .btn-action:hover {
-        background: #007bff;
-        color: white;
+    .table tbody td {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 8px;
+        font-size: 0.9rem;
     }
-    .no-sales {
-        text-align: center;
-        padding: 40px;
-        color: #777;
+    .table tbody td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #555;
     }
-    .no-sales .empty-icon {
-        font-size: 3rem;
-        color: #ccc;
-        margin-bottom: 10px;
-    }
+}
 </style>
 {% endblock %}
 
@@ -121,17 +190,17 @@
                 <tbody>
                     {% for sale in page_obj %}
                     <tr>
-                        <td><strong>{{ sale.invoice_number }}</strong></td>
-                        <td>{{ sale.created_at|date:"M d, Y H:i" }}</td>
-                        <td>{{ sale.customer_name|default:"Walk-in Customer" }}</td>
-                        <td>{{ sale.saleitem_set.count }}</td>
-                        <td>
+                        <td data-label="Invoice #"><strong>{{ sale.invoice_number }}</strong></td>
+                        <td data-label="Date">{{ sale.created_at|date:"M d, Y H:i" }}</td>
+                        <td data-label="Customer">{{ sale.customer_name|default:"Walk-in Customer" }}</td>
+                        <td data-label="Items">{{ sale.saleitem_set.count }}</td>
+                        <td data-label="Payment">
                             <span class="payment-badge payment-{{ sale.payment_method }}">
                                 {{ sale.get_payment_method_display }}
                             </span>
                         </td>
-                        <td><strong>${{ sale.final_amount }}</strong></td>
-                        <td class="actions">
+                        <td data-label="Total"><strong>₹{{ sale.final_amount|floatformat:2 }}</strong></td>
+                        <td data-label="Actions" class="actions">
                             <a href="{% url 'sale_receipt' sale.id %}" class="btn-action" target="_blank">
                                 <i class="fas fa-receipt"></i> Receipt
                             </a>
