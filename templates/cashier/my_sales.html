@@ -150,25 +150,27 @@
     <!-- Header -->
     <div class="sales-header">
         <h2 class="fw-bold">🧾 My Sales History</h2>
-        <a href="{% url 'dashboard' %}" class="btn btn-primary">
-            <i class="fas fa-cash-register"></i> Back to POS
+        <a href="{% url 'pos_home' %}" class="btn btn-primary btn-sm mb-3">
+            <i class="bi bi-arrow-left-circle"></i> Back to POS
         </a>
     </div>
 
     <!-- Filters -->
-    <div class="sales-filter">
-        <div class="search-container d-flex align-items-center">
-            <input type="text" id="sales-search" placeholder="Search by invoice or customer...">
-            <button id="search-button"><i class="fas fa-search"></i></button>
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-md-4">
+            <input type="text" name="search" placeholder="Search by invoice or customer"
+                   value="{{ request.GET.search }}" class="form-control">
         </div>
-        <div class="date-filter d-flex align-items-center gap-2">
-            <label for="date-from" class="mb-0">From:</label>
-            <input type="date" id="date-from" class="form-control form-control-sm">
-            <label for="date-to" class="mb-0">To:</label>
-            <input type="date" id="date-to" class="form-control form-control-sm">
-            <button id="filter-button" class="btn btn-sm btn-primary">Filter</button>
+        <div class="col-md-3">
+            <input type="date" name="start_date" value="{{ request.GET.start_date }}" class="form-control">
         </div>
-    </div>
+        <div class="col-md-3">
+            <input type="date" name="end_date" value="{{ request.GET.end_date }}" class="form-control">
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Filter</button>
+        </div>
+    </form>
 
     <!-- Sales Table -->
     <div class="sales-table-container mt-3">
@@ -192,7 +194,13 @@
                         <td data-label="Invoice #"><strong>{{ sale.invoice_number }}</strong></td>
                         <td data-label="Date">{{ sale.created_at|date:"M d, Y H:i" }}</td>
                         <td data-label="Customer">{{ sale.customer_name|default:"Walk-in Customer" }}</td>
-                        <td data-label="Items">{{ sale.saleitem_set.count }}</td>
+                        <td>
+                            {% if sale.items.exists %}
+                                {{ sale.items.count }} items
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
                         <td data-label="Payment">
                             <span class="payment-badge payment-{{ sale.payment_method }}">
                                 {{ sale.get_payment_method_display }}
