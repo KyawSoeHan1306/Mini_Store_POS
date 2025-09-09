@@ -237,6 +237,10 @@ document.getElementById("checkoutBtn").addEventListener("click", () => {
 // Confirm checkout
 document.getElementById("confirmCheckoutBtn").addEventListener("click", () => {
     const paymentMethod = document.getElementById("paymentMethod").value;
+    const customerName = document.getElementById("customerName").value;
+    const customerPhone = document.getElementById("customerPhone").value;
+    const notes = document.getElementById("notes").value;
+
     if (!paymentMethod) {
         alert("Please select a payment method.");
         return;
@@ -250,7 +254,10 @@ document.getElementById("confirmCheckoutBtn").addEventListener("click", () => {
         },
         body: JSON.stringify({
             cart,
-            payment_method: paymentMethod
+            payment_method: paymentMethod,
+            customer_name: customerName,
+            customer_phone: customerPhone,
+            notes: notes
         }),
     })
     .then(res => res.json())
