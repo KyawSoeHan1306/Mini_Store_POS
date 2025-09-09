@@ -293,7 +293,7 @@ def sale_edit_view(request, sale_id):
     context = {
         'form': form,
         'sale': sale,
-        'sale_items': sale.saleitem_set.all(),
+        'sale_items': sale.items.all(),
     }
 
     return render(request, 'admin/sale_edit.html', context)
