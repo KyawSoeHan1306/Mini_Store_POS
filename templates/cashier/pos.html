@@ -25,7 +25,7 @@
                 <div class="card h-100 product-card" data-category="{{ product.category.id }}">
                     <div class="card-body d-flex flex-column">
                         <h6 class="card-title text-truncate">{{ product.name }}</h6>
-                        <p class="text-muted mb-2">${{ product.price }}</p>
+                        <p class="text-muted mb-2">฿{{ product.price }}</p>
                         <button class="btn btn-sm btn-primary mt-auto add-to-cart"
                                 data-id="{{ product.id }}"
                                 data-name="{{ product.name }}"
@@ -50,13 +50,13 @@
             </div>
             <div class="card-footer">
                 <div class="d-flex justify-content-between mb-2">
-                    <span>Subtotal</span><span id="subtotal">$0.00</span>
+                    <span>Subtotal</span><span id="subtotal">฿0.00</span>
                 </div>
                 <div class="d-flex justify-content-between mb-2">
-                    <span>Tax</span><span id="tax">$0.00</span>
+                    <span>Tax</span><span id="tax">฿0.00</span>
                 </div>
                 <div class="d-flex justify-content-between fw-bold border-top pt-2">
-                    <span>Total</span><span id="total">$0.00</span>
+                    <span>Total</span><span id="total">฿0.00</span>
                 </div>
                 <!-- Checkout Modal -->
                 <div class="modal fade" id="checkoutModal" tabindex="-1">
@@ -155,12 +155,12 @@ function renderCart() {
         div.innerHTML = `
             <div>
                 <strong>${item.name}</strong><br>
-                <small>$${item.price.toFixed(2)} x ${item.qty}</small>
+                <small>$${item.price.toFixed(2)} x ฿{item.qty}</small>
             </div>
             <div>
-                <button class="btn btn-sm btn-outline-secondary me-1" onclick="changeQty('${item.id}', -1)">-</button>
-                <button class="btn btn-sm btn-outline-secondary me-1" onclick="changeQty('${item.id}', 1)">+</button>
-                <button class="btn btn-sm btn-danger" onclick="removeItem('${item.id}')"><i class="fas fa-trash"></i></button>
+                <button class="btn btn-sm btn-outline-secondary me-1" onclick="changeQty('฿{item.id}', -1)">-</button>
+                <button class="btn btn-sm btn-outline-secondary me-1" onclick="changeQty('฿{item.id}', 1)">+</button>
+                <button class="btn btn-sm btn-danger" onclick="removeItem('฿{item.id}')"><i class="fas fa-trash"></i></button>
             </div>
         `;
         cartItems.appendChild(div);
@@ -189,9 +189,9 @@ function updateTotals() {
     const tax = subtotal * TAX_RATE;
     const total = subtotal + tax;
 
-    subtotalEl.textContent = `$${subtotal.toFixed(2)}`;
-    taxEl.textContent = `$${tax.toFixed(2)}`;
-    totalEl.textContent = `$${total.toFixed(2)}`;
+    subtotalEl.textContent = `$฿{subtotal.toFixed(2)}`;
+    taxEl.textContent = `$฿{tax.toFixed(2)}`;
+    totalEl.textContent = `$฿{total.toFixed(2)}`;
 }
 
 // ------------------ CATEGORY FILTER ------------------
@@ -259,7 +259,7 @@ document.getElementById("confirmCheckoutBtn").addEventListener("click", () => {
             alert("Sale Completed! Transaction ID: " + data.sale_id);
             cart = [];
             renderCart();
-            window.location.href = `/receipt/${data.sale_id}/`; // redirect to receipt
+            window.location.href = `/receipt/฿{data.sale_id}/`; // redirect to receipt
         } else {
             alert("Error: " + data.message);
         }
