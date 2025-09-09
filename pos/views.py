@@ -511,10 +511,13 @@ def my_sales_view(request):
     from_date = request.GET.get('from_date')
     to_date = request.GET.get('to_date')
 
+    if search_query:
+        sales = sales.filter(...)
     if from_date:
         sales = sales.filter(created_at__date__gte=parse_date(from_date))
     if to_date:
         sales = sales.filter(created_at__date__lte=parse_date(to_date))
+
 
     # --- Pagination ---
     paginator = Paginator(sales, 10)  # 10 per page
