@@ -40,7 +40,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h4>₹{{ total_sales_today }}</h4>
+                        <h4>฿{{ total_sales_today }}</h4>
                         <p class="mb-0">Today's Sales</p>
                     </div>
                     <i class="fas fa-chart-line fa-2x opacity-75"></i>
@@ -53,7 +53,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h4>₹{{ total_sales_week }}</h4>
+                        <h4>฿{{ total_sales_week }}</h4>
                         <p class="mb-0">This Week</p>
                     </div>
                     <i class="fas fa-calendar-week fa-2x opacity-75"></i>
@@ -86,7 +86,7 @@
                                 <tr>
                                     <td>{{ sale.invoice_number }}</td>
                                     <td>{{ sale.cashier.first_name }}</td>
-                                    <td>₹{{ sale.final_amount }}</td>
+                                    <td>฿{{ sale.final_amount }}</td>
                                     <td>{{ sale.created_at|date:"H:i" }}</td>
                                 </tr>
                                 {% endfor %}
