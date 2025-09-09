@@ -5,11 +5,5 @@ crispy-bootstrap5==0.7
 python-decouple==3.8
 dj_database_url
 reportlab~=3.6.13
-Django~=4.2.7
-Pillow
-django-crispy-forms==2.0
-crispy-bootstrap5==0.7
-python-decouple==3.8
-dj_database_url
-reportlab~=3.6.13
+gunicorn
 psycopg2
