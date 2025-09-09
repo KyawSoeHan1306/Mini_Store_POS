@@ -34,15 +34,15 @@
                                     <tr>
                                         <td>{{ item.product.name }}</td>
                                         <td>{{ item.quantity }}</td>
-                                        <td>${{ item.unit_price }}</td>
-                                        <td>${{ item.total_price }}</td>
+                                        <td>฿{{ item.unit_price }}</td>
+                                        <td>฿{{ item.total_price }}</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
                                 <tfoot>
                                     <tr>
                                         <td colspan="3" class="text-end"><strong>Subtotal:</strong></td>
-                                        <td>${{ sale.total_amount }}</td>
+                                        <td>฿{{ sale.total_amount }}</td>
                                     </tr>
                                 </tfoot>
                             </table>
