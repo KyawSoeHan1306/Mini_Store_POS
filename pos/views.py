@@ -779,23 +779,46 @@ from .models import Sale, SaleItem, Product
 
 @login_required
 def process_sale(request):
-    if request.method == "POST":
+    if not is_cashier(request.user):
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            cart = data.get("cart", [])
-            payment_method = data.get("payment_method", "cash")
-            customer_name = data.get("customer_name", "")
-            customer_phone = data.get("customer_phone", "")
-            notes = data.get("notes", "")
+            items = data.get('items', [])
+            customer_name = data.get('customer_name', '')
+            customer_phone = data.get('customer_phone', '')
+            payment_method = data.get('payment_method', 'cash')
+            discount_amount = Decimal(str(data.get('discount_amount', 0)))
 
-            if not cart:
-                return JsonResponse({"success": False, "message": "Cart is empty"})
+            if not items:
+                return JsonResponse({'error': 'No items in cart'}, status=400)
 
-            # Compute amounts
-            subtotal = sum(item["price"] * item["qty"] for item in cart)
-            discount = 0  # apply rules if needed
-            tax = subtotal * 0.1  # example: 10% tax
-            final_total = subtotal - discount + tax
+            # Calculate totals
+            total_amount = Decimal('0')
+            sale_items = []
+
+            for item in items:
+                product = Product.objects.get(id=item['product_id'], is_active=True)
+                quantity = int(item['quantity'])
+
+                if product.stock_quantity < quantity:
+                    return JsonResponse({'error': f'Insufficient stock for {product.name}'}, status=400)
+
+                unit_price = product.price
+                total_price = quantity * unit_price
+                total_amount += total_price
+
+                sale_items.append({
+                    'product': product,
+                    'quantity': quantity,
+                    'unit_price': unit_price,
+                    'total_price': total_price,
+                })
+
+            # Apply discount and calculate final amount
+            tax_amount = Decimal('0')  # You can implement tax calculation here
+            final_amount = total_amount - discount_amount + tax_amount
 
             # Create sale
             sale = Sale.objects.create(
@@ -810,26 +833,44 @@ def process_sale(request):
                 notes=data.get('notes', ''),
             )
 
-            # Save SaleItems
-            for item in cart:
-                product = Product.objects.get(pk=item["id"])
+
+            # Create sale items and update stock
+            for item_data in sale_items:
                 SaleItem.objects.create(
                     sale=sale,
-                    product=product,
-                    quantity=item["qty"],
-                    unit_price=item["price"],
+                    product=item_data['product'],
+                    quantity=item_data['quantity'],
+                    unit_price=item_data['unit_price'],
+                    total_price=item_data['total_price'],
                 )
-                # reduce stock
-                product.stock_quantity -= item["qty"]
+
+                # Update stock
+                product = item_data['product']
+                product.stock_quantity -= item_data['quantity']
                 product.save()
 
-            return JsonResponse({"success": True, "sale_id": sale.id})
+                # Create stock movement
+                StockMovement.objects.create(
+                    product=product,
+                    movement_type='out',
+                    quantity=item_data['quantity'],
+                    reference_type='sale',
+                    reference_id=sale.id,
+                    notes=f'Sale - Invoice #{sale.invoice_number}',
+                    created_by=request.user,
+                )
+
+            return JsonResponse({
+                'success': True,
+                'invoice_number': sale.invoice_number,
+                'final_amount': str(sale.final_amount),
+                'sale_id': sale.id,
+            })
 
         except Exception as e:
-            return JsonResponse({"success": False, "message": str(e)})
+            return JsonResponse({'error': str(e)}, status=500)
 
-    return JsonResponse({"success": False, "message": "Invalid request"})
-
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 
 @login_required
