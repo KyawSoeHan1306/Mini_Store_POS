@@ -268,8 +268,8 @@ document.getElementById("confirmCheckoutBtn").addEventListener("click", () => {
             alert(
                 "Sale Completed!\n" +
                 "Invoice: " + data.invoice_number + "\n" +
-                "Tax: ₹" + data.tax_amount + "\n" +
-                "Final Amount: ₹" + data.final_amount
+                "Tax: ฿" + parseFloat(data.tax_amount).toFixed(2) + "\n" +
+                "Final Amount: ฿" + parseFloat(data.final_amount).toFixed(2)
             );
             cart = [];
             renderCart();
