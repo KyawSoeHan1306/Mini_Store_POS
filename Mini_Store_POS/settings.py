@@ -80,22 +80,27 @@ WSGI_APPLICATION = "Mini_Store_POS.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-DATABASES = {}
 
-# If DATABASE_URL is set (Render/Production), use it
-DATABASE_URL = config('DATABASE_URL', default=None)
+DATABASE_URL = os.getenv("DATABASE_URL")
+
 if DATABASE_URL:
-    DATABASES['default'] = dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)
-else:
-    # Local development with PostgreSQL
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'pos_db',
-        'USER': 'postgres',
-        'PASSWORD': 'han130602',
-        'HOST': 'localhost',
-        'PORT': '5432',
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL, conn_max_age=600, ssl_require=True
+        )
     }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'pos_db',
+            'USER': 'postgres',
+            'PASSWORD': 'han130602',
+            'HOST': 'localhost',
+            'PORT': '5432',
+        }
+    }
+
 
 
 # Password validation
