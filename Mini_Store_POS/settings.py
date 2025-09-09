@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 import os
 from pathlib import Path
+
+import dj_database_url
 from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -78,23 +80,21 @@ WSGI_APPLICATION = "Mini_Store_POS.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-if config('DATABASE_URL', default=None):
-    # Production - PostgreSQL
-    import dj_database_url
-    DATABASES = {
-        'default': dj_database_url.parse(config('DATABASE_URL'))
-    }
+DATABASES = {}
+
+# If DATABASE_URL is set (Render/Production), use it
+DATABASE_URL = config('DATABASE_URL', default=None)
+if DATABASE_URL:
+    DATABASES['default'] = dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)
 else:
-    # Development - SQLite
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'pos_db',
-            'USER': 'postgres',
-            'PASSWORD': 'han130602',
-            'HOST': 'localhost',
-            'PORT': '5432',
-        }
+    # Local development with PostgreSQL
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'pos_db',
+        'USER': 'postgres',
+        'PASSWORD': 'han130602',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 
 
