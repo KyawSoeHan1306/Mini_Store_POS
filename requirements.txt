@@ -12,3 +12,4 @@ crispy-bootstrap5==0.7
 python-decouple==3.8
 dj_database_url
 reportlab~=3.6.13
+psycopg2
