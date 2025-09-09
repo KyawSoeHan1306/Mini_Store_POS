@@ -155,12 +155,12 @@ function renderCart() {
         div.innerHTML = `
             <div>
                 <strong>${item.name}</strong><br>
-                <small>$${item.price.toFixed(2)} x ฿{item.qty}</small>
+                <small>฿${item.price.toFixed(2)} x ${item.qty}</small>
             </div>
             <div>
-                <button class="btn btn-sm btn-outline-secondary me-1" onclick="changeQty('฿{item.id}', -1)">-</button>
-                <button class="btn btn-sm btn-outline-secondary me-1" onclick="changeQty('฿{item.id}', 1)">+</button>
-                <button class="btn btn-sm btn-danger" onclick="removeItem('฿{item.id}')"><i class="fas fa-trash"></i></button>
+                <button class="btn btn-sm btn-outline-secondary me-1" onclick="changeQty('${item.id}', -1)">-</button>
+                <button class="btn btn-sm btn-outline-secondary me-1" onclick="changeQty('${item.id}', 1)">+</button>
+                <button class="btn btn-sm btn-danger" onclick="removeItem('${item.id}')"><i class="fas fa-trash"></i></button>
             </div>
         `;
         cartItems.appendChild(div);
@@ -189,9 +189,9 @@ function updateTotals() {
     const tax = subtotal * TAX_RATE;
     const total = subtotal + tax;
 
-    subtotalEl.textContent = `$฿{subtotal.toFixed(2)}`;
-    taxEl.textContent = `$฿{tax.toFixed(2)}`;
-    totalEl.textContent = `$฿{total.toFixed(2)}`;
+    subtotalEl.textContent = `฿${subtotal.toFixed(2)}`;
+    taxEl.textContent = `฿${tax.toFixed(2)}`;
+    totalEl.textContent = `฿${total.toFixed(2)}`;
 }
 
 // ------------------ CATEGORY FILTER ------------------
@@ -259,7 +259,7 @@ document.getElementById("confirmCheckoutBtn").addEventListener("click", () => {
             alert("Sale Completed! Transaction ID: " + data.sale_id);
             cart = [];
             renderCart();
-            window.location.href = `/receipt/฿{data.sale_id}/`; // redirect to receipt
+            window.location.href = `/receipt/${data.sale_id}/`; // redirect to receipt
         } else {
             alert("Error: " + data.message);
         }
