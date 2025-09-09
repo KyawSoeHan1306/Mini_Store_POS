@@ -785,7 +785,7 @@ def process_sale(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            items = data.get('items', [])
+            items = data.get('cart', [])
             customer_name = data.get('customer_name', '')
             customer_phone = data.get('customer_phone', '')
             payment_method = data.get('payment_method', 'cash')
