@@ -800,14 +800,14 @@ def process_sale(request):
             # Create sale
             sale = Sale.objects.create(
                 cashier=request.user,
-                total_amount=subtotal,
-                discount_amount=discount,
-                tax_amount=tax,
-                final_amount=final_total,
+                total_amount=total_amount,
+                discount_amount=discount_amount,
+                tax_amount=tax_amount,
+                final_amount=final_amount,
                 payment_method=payment_method,
                 customer_name=customer_name,
                 customer_phone=customer_phone,
-                notes=notes,
+                notes=data.get('notes', ''),
             )
 
             # Save SaleItems
