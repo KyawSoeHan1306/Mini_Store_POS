@@ -28,8 +28,8 @@
           <tr>
             <td>{{ item.product.name }}</td>
             <td class="text-center">{{ item.quantity }}</td>
-            <td class="text-end">{{ item.unit_price }}</td>
-            <td class="text-end">{{ item.total_price }}</td>
+            <td class="text-end">{{ item.unit_price }}฿</td>
+            <td class="text-end">{{ item.total_price }}฿</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -40,16 +40,16 @@
       <!-- Totals -->
       <div class="row">
         <div class="col-6 text-end"><strong>Subtotal:</strong></div>
-        <div class="col-6 text-end">{{ subtotal }}</div>
+        <div class="col-6 text-end">{{ subtotal }}฿</div>
 
         <div class="col-6 text-end"><strong>Discount:</strong></div>
-        <div class="col-6 text-end">- {{ discount }}</div>
+        <div class="col-6 text-end">- {{ discount }}฿</div>
 
         <div class="col-6 text-end"><strong>Tax:</strong></div>
-        <div class="col-6 text-end">{{ tax }}</div>
+        <div class="col-6 text-end">{{ tax }}฿</div>
 
         <div class="col-6 text-end"><h5>Total:</h5></div>
-        <div class="col-6 text-end"><h5>{{ final }}</h5></div>
+        <div class="col-6 text-end"><h5>{{ final }}฿</h5></div>
       </div>
 
       <hr>
