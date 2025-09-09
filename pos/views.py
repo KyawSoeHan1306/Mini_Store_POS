@@ -818,7 +818,8 @@ def process_sale(request):
                 })
 
             # Apply discount and calculate final amount
-            tax_amount = Decimal('0')
+            tax_rate = Decimal('0.10')  # 10% tax (example)
+            tax_amount = (total_amount - discount_amount) * tax_rate
             final_amount = total_amount - discount_amount + tax_amount
 
             # Create sale
